@@ -433,18 +433,28 @@ def location_percentages():
     if total_entries == 0:
         return jsonify([])
 
-    # Count locations
+    # Count locations and track last Pokemon and date for each
     location_counts = {}
+    location_last_info = {}
     for row in rows:
         loc = row["Location"]
         location_counts[loc] = location_counts.get(loc, 0) + 1
+        # Track the last entry for this location (rows are in order, so we keep updating)
+        location_last_info[loc] = {"pokemon": row["Pokemon"], "date": row["Date"]}
 
-    # Convert to list of {Location, Percentage}, sorted by count desc
+    # Convert to list of {Location, Percentage, LastPokemon, LastDate}, sorted by count desc
     # (to mimic pandas value_counts behavior)
     result = []
     for loc, count in location_counts.items():
         percentage = (count / total_entries) * 100
-        result.append({"Location": loc, "Percentage": percentage})
+        result.append(
+            {
+                "Location": loc,
+                "Percentage": percentage,
+                "LastPokemon": location_last_info[loc]["pokemon"],
+                "LastDate": location_last_info[loc]["date"],
+            }
+        )
 
     # Sort by percentage descending
     result.sort(key=lambda x: x["Percentage"], reverse=True)

@@ -405,9 +405,12 @@ function fetchLocationPercentages() {
             data.forEach(entry => {
                 const newRow = locationPercentagesTable.insertRow();
 				const saniLocation = escapeHtml(entry.Location);
+				const saniPokemon = escapeHtml(entry.LastPokemon);
+				const saniDate = escapeHtml(entry.LastDate);
                 newRow.innerHTML = 
                     `<td>${saniLocation}</td>
-                    <td>${entry.Percentage.toFixed(2)}%</td>`;
+                    <td>${entry.Percentage.toFixed(2)}%</td>
+                    <td>${saniPokemon} (${saniDate})</td>`;
             });
         })
         .catch(error => {
