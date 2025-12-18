@@ -149,12 +149,16 @@
         
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-label">Total Months Played</div>
-                <div class="stat-value" id="totalMonths">-</div>
+                <div class="stat-label">Total Active Months Played</div>
+                <div class="stat-value" id="totalActiveMonths">-</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Average Runs per Month</div>
-                <div class="stat-value" id="avgRuns">-</div>
+                <div class="stat-label">Average (Active Months)</div>
+                <div class="stat-value" id="avgRunsActive">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average (All Months)</div>
+                <div class="stat-value" id="avgRunsAll">-</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Best Month</div>
@@ -245,24 +249,31 @@
                 return;
             }
             
+            // Fill in missing months with 0 runs
+            const filledData = fillMissingMonths(data);
+            
             // Prepare chart data
-            const labels = data.map(item => {
+            const labels = filledData.map(item => {
                 const [year, month] = item.month.split('-');
                 const date = new Date(year, month - 1);
                 return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
             });
-            const counts = data.map(item => item.count);
+            const counts = filledData.map(item => item.count);
             
             // Calculate stats
-            const totalMonths = data.length;
+            const monthsWithRuns = filledData.filter(item => item.count > 0);
+            const totalActiveMonths = monthsWithRuns.length;
+            const totalAllMonths = filledData.length;
             const totalRuns = counts.reduce((a, b) => a + b, 0);
-            const avgRuns = Math.round(totalRuns / totalMonths);
+            const avgRunsActive = totalActiveMonths > 0 ? Math.round(totalRuns / totalActiveMonths) : 0;
+            const avgRunsAll = totalAllMonths > 0 ? (totalRuns / totalAllMonths).toFixed(1) : 0;
             const maxRuns = Math.max(...counts);
             const maxMonthIndex = counts.indexOf(maxRuns);
             const bestMonth = labels[maxMonthIndex];
             
-            document.getElementById('totalMonths').textContent = totalMonths;
-            document.getElementById('avgRuns').textContent = avgRuns;
+            document.getElementById('totalActiveMonths').textContent = totalActiveMonths;
+            document.getElementById('avgRunsActive').textContent = avgRunsActive;
+            document.getElementById('avgRunsAll').textContent = avgRunsAll;
             document.getElementById('bestMonth').textContent = `${bestMonth} (${maxRuns})`;
             
             // Destroy existing chart
@@ -344,6 +355,43 @@
                     }
                 }
             });
+        }
+        
+        function fillMissingMonths(data) {
+            if (data.length === 0) return data;
+            
+            const result = [];
+            const firstMonth = data[0].month;
+            const lastMonth = data[data.length - 1].month;
+            
+            // Convert to date objects
+            let [startYear, startMonth] = firstMonth.split('-').map(Number);
+            const [endYear, endMonth] = lastMonth.split('-').map(Number);
+            
+            // Create a map of existing data for quick lookup
+            const dataMap = {};
+            data.forEach(item => {
+                dataMap[item.month] = item.count;
+            });
+            
+            // Iterate through all months from start to end
+            while (startYear < endYear || (startYear === endYear && startMonth <= endMonth)) {
+                const monthKey = `${startYear}-${String(startMonth).padStart(2, '0')}`;
+                
+                result.push({
+                    month: monthKey,
+                    count: dataMap[monthKey] || 0
+                });
+                
+                // Increment month
+                startMonth++;
+                if (startMonth > 12) {
+                    startMonth = 1;
+                    startYear++;
+                }
+            }
+            
+            return result;
         }
         
         loadData();
