@@ -40,6 +40,52 @@
             text-decoration: underline;
         }
         
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        .filter-controls label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .filter-controls input[type="date"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .filter-controls button {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .filter-controls button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .filter-controls button:active {
+            transform: translateY(0);
+        }
+        
+        .filter-controls button.reset {
+            background: #6c757d;
+        }
+        
         #chartContainer {
             width: 100%;
             height: 500px;
@@ -72,13 +118,34 @@
             font-weight: bold;
             margin-top: 5px;
         }
+        
+        .chart-hint {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+            font-style: italic;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 </head>
 <body>
     <div class="container">
         <a href="/" class="back-link">← Back to Leaderboard</a>
         <h1>Runs Over Time</h1>
+        
+        <div class="filter-controls">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+            
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+            
+            <button onclick="applyFilter()">Apply Filter</button>
+            <button class="reset" onclick="resetFilter()">Reset</button>
+        </div>
         
         <div class="stats">
             <div class="stat-card">
@@ -98,10 +165,14 @@
         <div id="chartContainer">
             <canvas id="runsChart"></canvas>
         </div>
+        <div class="chart-hint">
+            💡 Tip: Scroll to zoom, click and drag to pan the chart
+        </div>
     </div>
     
     <script>
         let chart = null;
+        let allData = [];
         
         async function loadData() {
             try {
@@ -113,84 +184,166 @@
                     return;
                 }
                 
-                // Prepare chart data
-                const labels = data.map(item => {
-                    const [year, month] = item.month.split('-');
-                    const date = new Date(year, month - 1);
-                    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
-                });
-                const counts = data.map(item => item.count);
+                allData = data;
                 
-                // Calculate stats
-                const totalMonths = data.length;
-                const totalRuns = counts.reduce((a, b) => a + b, 0);
-                const avgRuns = Math.round(totalRuns / totalMonths);
-                const maxRuns = Math.max(...counts);
-                const maxMonthIndex = counts.indexOf(maxRuns);
-                const bestMonth = labels[maxMonthIndex];
+                // Set default date range
+                if (data.length > 0) {
+                    const firstMonth = data[0].month;
+                    const lastMonth = data[data.length - 1].month;
+                    
+                    document.getElementById('startDate').value = firstMonth + '-01';
+                    document.getElementById('endDate').value = lastMonth + '-01';
+                }
                 
-                document.getElementById('totalMonths').textContent = totalMonths;
-                document.getElementById('avgRuns').textContent = avgRuns;
-                document.getElementById('bestMonth').textContent = `${bestMonth} (${maxRuns})`;
-                
-                // Create chart
-                const ctx = document.getElementById('runsChart').getContext('2d');
-                chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Runs per Month',
-                            data: counts,
-                            borderColor: '#667eea',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 5,
-                            pointHoverRadius: 7,
-                            pointBackgroundColor: '#667eea',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    stepSize: 1
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Number of Runs'
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Month'
-                                }
-                            }
-                        }
-                    }
-                });
+                renderChart(data);
             } catch (error) {
                 console.error('Error loading chart data:', error);
                 document.getElementById('chartContainer').innerHTML = '<p style="text-align: center; color: red;">Error loading data</p>';
             }
+        }
+        
+        function filterData(data, startDate, endDate) {
+            if (!startDate && !endDate) {
+                return data;
+            }
+            
+            return data.filter(item => {
+                const itemDate = item.month;
+                if (startDate && itemDate < startDate) return false;
+                if (endDate && itemDate > endDate) return false;
+                return true;
+            });
+        }
+        
+        function applyFilter() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // Convert dates to YYYY-MM format for comparison
+            const startMonth = startDate ? startDate.substring(0, 7) : null;
+            const endMonth = endDate ? endDate.substring(0, 7) : null;
+            
+            const filteredData = filterData(allData, startMonth, endMonth);
+            renderChart(filteredData);
+        }
+        
+        function resetFilter() {
+            if (allData.length > 0) {
+                const firstMonth = allData[0].month;
+                const lastMonth = allData[allData.length - 1].month;
+                
+                document.getElementById('startDate').value = firstMonth + '-01';
+                document.getElementById('endDate').value = lastMonth + '-01';
+            }
+            
+            renderChart(allData);
+        }
+        
+        function renderChart(data) {
+            if (data.length === 0) {
+                document.getElementById('chartContainer').innerHTML = '<p style="text-align: center; color: #999;">No data in selected range</p>';
+                return;
+            }
+            
+            // Prepare chart data
+            const labels = data.map(item => {
+                const [year, month] = item.month.split('-');
+                const date = new Date(year, month - 1);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            });
+            const counts = data.map(item => item.count);
+            
+            // Calculate stats
+            const totalMonths = data.length;
+            const totalRuns = counts.reduce((a, b) => a + b, 0);
+            const avgRuns = Math.round(totalRuns / totalMonths);
+            const maxRuns = Math.max(...counts);
+            const maxMonthIndex = counts.indexOf(maxRuns);
+            const bestMonth = labels[maxMonthIndex];
+            
+            document.getElementById('totalMonths').textContent = totalMonths;
+            document.getElementById('avgRuns').textContent = avgRuns;
+            document.getElementById('bestMonth').textContent = `${bestMonth} (${maxRuns})`;
+            
+            // Destroy existing chart
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Create chart
+            const ctx = document.getElementById('runsChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Runs per Month',
+                        data: counts,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        zoom: {
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                mode: 'x',
+                            },
+                            pan: {
+                                enabled: true,
+                                mode: 'x',
+                                modifierKey: null,
+                                onPanStart: function({chart}) {
+                                    console.log('Pan started');
+                                    return true;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            },
+                            title: {
+                                display: true,
+                                text: 'Number of Runs'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month'
+                            }
+                        }
+                    }
+                }
+            });
         }
         
         loadData();
