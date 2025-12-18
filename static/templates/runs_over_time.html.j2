@@ -266,7 +266,7 @@
             const totalAllMonths = filledData.length;
             const totalRuns = counts.reduce((a, b) => a + b, 0);
             const avgRunsActive = totalActiveMonths > 0 ? Math.round(totalRuns / totalActiveMonths) : 0;
-            const avgRunsAll = totalAllMonths > 0 ? (totalRuns / totalAllMonths).toFixed(1) : 0;
+            const avgRunsAll = totalAllMonths > 0 ? Math.round(totalRuns / totalAllMonths) : 0;
             const maxRuns = Math.max(...counts);
             const maxMonthIndex = counts.indexOf(maxRuns);
             const bestMonth = labels[maxMonthIndex];
