@@ -25,6 +25,13 @@
                 <h1>{{ title }}</h1>
             </div>
         </div>
+        
+        <div style="text-align: center; margin: 15px 0;">
+            <a href="/runs_over_time" style="display: inline-block; padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.2s; font-size: 14px;">
+                📊 View Runs Over Time
+            </a>
+        </div>
+        
         <form id="entryForm">
             <label for="pokemon">Pokemon:</label>
             <input type="text" id="pokemon" name="pokemon" autocomplete="off" list="pokemon_dataset" required>
@@ -45,24 +52,24 @@
         </form>
     </div>
 	<div class="stats-container">
-		<table class="stats-table">
-			<tr>
-				<td id="totalEntries" class="stats">Total Pokemon: Loading...</td> <!-- Updated section for total Pokémon -->
-				<td id="currentStreak" class="stats">Current Streak: Loading...</td>
-			</tr>
-			<tr>
-				<td id="uniqueEntries" class="stats">Unique Pokemon: Loading...</td>
-				<td id="longestStreak" class="stats">Longest Streak: Loading...</td>
-			</tr>
-			<tr>
-				<td id="averageBst" class="stats">Average BST: Loading...</td>
-				<td id="maxRunsPerDay" class="stats">Most Runs in a Day: Loading...</td> <!-- Added section for most runs in a day -->
-			</tr>
-			<tr>
-				<td id="lowestBst" class="stats">Lowest BST: Loading...</td>
-			</tr>
-		</table>
-	</div>
+        <table class="stats-table">
+            <tr>
+                <td id="totalEntries" class="stats">Total Pokemon: Loading...</td> <!-- Updated section for total Pokémon -->
+                <td id="currentStreak" class="stats">Current Streak: Loading...</td>
+            </tr>
+            <tr>
+                <td id="uniqueEntries" class="stats">Unique Pokemon: Loading...</td>
+                <td id="longestStreak" class="stats">Longest Streak: Loading...</td>
+            </tr>
+            <tr>
+                <td id="averageBst" class="stats">Average BST: Loading...</td>
+                <td id="maxRunsPerDay" class="stats">Most Runs in a Day: Loading...</td> <!-- Added section for most runs in a day -->
+            </tr>
+            <tr>
+                <td id="lowestBst" class="stats">Lowest BST: Loading...</td>
+            </tr>
+        </table>
+    </div>
 
     <div id="message"></div>
 
@@ -166,6 +173,8 @@
             </div>
         </div>
     </div>
+
+    
 </body>
 </html>
 

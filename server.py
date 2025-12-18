@@ -926,6 +926,38 @@ def csv_delete_row():
     return jsonify({"success": False, "error": "Invalid row index"})
 
 
+@app.route("/runs_over_time")
+def runs_over_time_page():
+    return render_template("runs_over_time.html.j2", title=config["title"])
+
+
+@app.route("/runs_by_month")
+def runs_by_month():
+    """Get count of runs grouped by month."""
+    rows = read_csv()
+    if not rows:
+        return jsonify([])
+
+    monthly_counts = {}
+
+    for row in rows:
+        try:
+            dt = datetime.strptime(row["Date"], "%m/%d/%Y")
+            # Create a month key in format "YYYY-MM"
+            month_key = dt.strftime("%Y-%m")
+            monthly_counts[month_key] = monthly_counts.get(month_key, 0) + 1
+        except ValueError:
+            continue
+
+    # Convert to list and sort by month
+    result = [
+        {"month": month, "count": count} for month, count in monthly_counts.items()
+    ]
+    result.sort(key=lambda x: x["month"])
+
+    return jsonify(result)
+
+
 if __name__ == "__main__":
     try:
         # Retrieve primary IP address
